@@ -10,7 +10,7 @@ st.markdown("""
 """)
 
 # Load data
-df = pd.read_excel("Echoh_scoring_with_word.xlsx")
+df = pd.read_excel("Target_sentences_only.xlsx")
 
 # Sidebar: SET and ITEM selection
 st.sidebar.header("문항 선택")
@@ -25,7 +25,7 @@ if not filtered.empty:
     st.write(target_sentence)
 
     # Input: user response
-    response_input = st.text_input("📝 반응 문장을 입력하세요")
+    response_input = st.text_input("반응 문장을 입력하세요")
 
     if response_input:
         # Match check functions
@@ -45,7 +45,7 @@ if not filtered.empty:
         matched_syn = filtered.iloc[0]["Matched_syn%"]
 
         # Show results
-        st.subheader("🔎 채점 결과")
+        st.subheader("채점 결과")
         scores = {
             "Word": matched_word,
             "Syllable": matched_syllable,
