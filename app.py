@@ -70,19 +70,18 @@ try:
     response = st.text_input("● 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
-     def matched_word_score(target_words, response_words):
-        # 정답 단어 중 맞춘 개수
+    def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
 
-        # 생략 감점: 정답 단어 중 빠진 단어
+        # 생략 감점
         missing = [w for w in target_words if w not in response_words]
         missing_penalty = len(missing)
 
-        # 첨가 감점: 정답에 없는 단어가 응답에 포함됨
+        # 첨가 감점
         extra = [w for w in response_words if w not in target_words]
-        extra_penalty = 1 if extra else 0  # 여러 개여도 1점만 감점
+        extra_penalty = 1 if extra else 0
 
-        # 도치 감점: 모든 단어가 맞고, 순서만 다를 때
+        # 도치 감점 (모두 맞고 순서만 다를 때)
         order_penalty = (
             1
             if matched == len(target_words) and target_words != response_words
@@ -143,7 +142,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # --- 다음 문항으로 이동 (st.rerun 사용) ---
+        # --- 다음 문항으로 이동 ---
         if st.session_state.current_item < 28:
             if st.button("➡️ 다음 문항으로 이동"):
                 st.session_state.current_item += 1
