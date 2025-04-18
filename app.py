@@ -161,3 +161,16 @@ try:
 
 except IndexError:
     st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
+
+# --- 저작권 안내 문구 (화면 하단 고정 스타일) ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style='font-size: 14px; color: gray; text-align: center;'>
+        © 2025 NABLe. All rights reserved. <br>
+        본 검사도구는 NABLe 연구팀에 의해 개발되었으며, 연구 및 교육 목적 외의 무단 복제 및 사용을 금합니다. <br>
+        <i>Top-down Sentence Repetition Task™</i> is the intellectual property of NABLe. Unauthorized commercial use or redistribution is prohibited.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
