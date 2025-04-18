@@ -8,7 +8,7 @@ st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="cente
 
 # --- NABLe 로고 ---
 logo = Image.open("nable_logo.jpg")
-st.image(logo, width=500)
+st.image(logo, width=250)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
