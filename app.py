@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 # NABLe 로고 불러오기
-logo = Image.open("nable-logo.png")  # 파일명은 너가 올린 이름에 맞게
+logo = Image.open("네이블로고.jpg")  # 파일명은 너가 올린 이름에 맞게
 st.image(logo, width=180)  # 사이즈 조정 가능
 
 
