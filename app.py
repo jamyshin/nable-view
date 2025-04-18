@@ -65,6 +65,7 @@ try:
         unsafe_allow_html=True
     )
 
+    
     # 반응 입력 라벨 (큰 폰트)
     st.markdown(
         """
@@ -74,7 +75,6 @@ try:
         """,
         unsafe_allow_html=True
     )
-
     response = st.text_input("", key=f"response_{st.session_state.current_item}")
 
     # 점수 계산 함수
