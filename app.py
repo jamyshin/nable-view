@@ -68,7 +68,7 @@ try:
     )
 
     # --- 반응 입력 ---
-    response = st.text_input("반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
+    response = st.text_input("• 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
