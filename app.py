@@ -72,24 +72,19 @@ try:
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
-
-        # 생략 감점
         missing = [w for w in target_words if w not in response_words]
         missing_penalty = len(missing)
 
-        # 첨가 감점
         extra = [w for w in response_words if w not in target_words]
         extra_penalty = 1 if extra else 0
 
-        # 도치 감점
-        order_penalty = 1 if matched == len(target_words) and target_words != response_words else 0
+        # 도치 감점 (정답 단어들끼리의 순서 비교)
+        filtered_response = [w for w in response_words if w in target_words]
+        order_penalty = 1 if filtered_response != [w for w in target_words if w in filtered_response] else 0
 
-        # 오류 수 기반 계산
         total_penalty = missing_penalty + extra_penalty + order_penalty
         score = (len(target_words) - total_penalty) / len(target_words)
-        score = max(score, 0)
-
-        return round(score * 100, 2)
+        return round(max(score, 0) * 100, 2)
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
