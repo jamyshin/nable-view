@@ -72,8 +72,19 @@ try:
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
+
+        # 순서 오류 감점
         if matched == len(target_words) and target_words != response_words:
-            matched -= 1  # 순서 다름/첨가/생략 감점
+            matched -= 1
+
+        # 첨가 감점 (정답에 없는 단어 포함 시 감점)
+        extra = [w for w in response_words if w not in target_words]
+        if extra:
+            matched -= 1
+
+        # 최소값 0 보장
+        matched = max(matched, 0)
+
         return round(matched / len(target_words) * 100, 2)
 
     def matched_syllable_score(target_syllables, response_sentence):
