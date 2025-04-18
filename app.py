@@ -15,14 +15,12 @@ st.title("Top-down Sentence Repetition Task")
 st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
 st.markdown("---")
 
-# 정답 로드
 @st.cache_data
 def load_answers():
     return pd.read_excel("Answers.xlsx")
 
 df = load_answers()
 
-# 세션 상태 초기화
 if "current_item" not in st.session_state:
     st.session_state.current_item = 1
 if "responses" not in st.session_state:
@@ -32,7 +30,7 @@ if "responses" not in st.session_state:
 set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split()[-1]))
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
-# 현재 문항 표시
+# 현재 문항
 st.markdown(f"### ✔️ 현재 문항: **Set {selected_set} - ITEM {st.session_state.current_item}/28**")
 
 # 정답 불러오기
@@ -59,17 +57,16 @@ try:
             margin-top: 10px;
             margin-bottom: 10px;
         '>
-            <strong>목표 문장:</strong> {target_sentence}
+            <strong></strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    
-    # 반응 입력 라벨 (큰 폰트)
+    # 반응 입력 라벨 (20px) + 입력창 밀착
     st.markdown(
         """
-        <p style='font-size:20px; font-weight:bold; margin-bottom:6px;'>
+        <p style='font-size:20px; font-weight:bold; margin-bottom:0px; margin-top:0px;'>
             📝 반응 문장을 입력하세요
         </p>
         """,
@@ -96,7 +93,6 @@ try:
 
     if response:
         response_words = response.split()
-
         word_pct = matched_word_score(target_words, response_words)
         syl_pct = matched_syllable_score(target_syllables, response)
         sem_pct = matched_list_score(target_sem, response)
@@ -109,8 +105,8 @@ try:
             "Syntactic": syn_pct
         }
 
-        # 점수 표
-        st.markdown("#### 본 문항의 점수")
+        # 점수표
+        st.markdown("#### 📋 본 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
             "Syllable": syl_pct,
@@ -131,7 +127,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-    # 전체 평균
+    # 평균 점수
     if len(st.session_state.responses) == 28:
         st.markdown("---")
         st.markdown("📊 전체 문항 평균 점수")
@@ -148,7 +144,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-    # 맨 하단 중앙에 다음 문항 버튼
+    # 맨 하단 중앙 ➡ 다음 문항
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([3, 2, 3])
     with col2:
@@ -159,4 +155,4 @@ try:
             st.markdown("모든 문항 입력이 완료되었습니다.")
 
 except IndexError:
-    st.error("해당 세트와 문항에 대한 정답 정보가 없습니다.")
+    st.error("해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
