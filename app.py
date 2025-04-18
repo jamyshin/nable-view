@@ -1,16 +1,16 @@
 import streamlit as st
+
+# ✅ 반드시 가장 위에 있어야 함!
+st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
+
+# 이후에 나머지 import
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from PIL import Image
 
 # NABLe 로고 불러오기
 logo = Image.open("nable_logo.jpg")  # 파일명은 너가 올린 이름에 맞게
 st.image(logo, width=180)  # 사이즈 조정 가능
-
-
-# --- 설정 ---
-st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
