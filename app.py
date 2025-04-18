@@ -3,52 +3,51 @@ from PIL import Image
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --- 페이지 설정 ---
+# 페이지 설정
 st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
 
-# --- NABLe 로고 ---
+# 로고
 logo = Image.open("nable_logo.jpg")
 st.image(logo, width=300)
 
-# --- 제목 & 설명 ---
+# 제목
 st.title("Top-down Sentence Repetition Task")
 st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
 st.markdown("---")
 
-# --- 정답표 불러오기 ---
+# 정답 파일 로드
 @st.cache_data
 def load_answers():
     return pd.read_excel("Answers.xlsx")
 
 df = load_answers()
 
-# --- 세션 초기화 ---
+# 세션 상태 초기화
 if "current_item" not in st.session_state:
     st.session_state.current_item = 1
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 
-# --- SET 선택 (정렬 포함) ---
+# SET 선택
 set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split()[-1]))
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
-# --- 현재 문항 표시 (텍스트만 강조) ---
-st.markdown(f"### 📌 현재 문항: **Set {selected_set} - ITEM {st.session_state.current_item}/28**")
+# 현재 문항 표시
+st.markdown(f"### ✔️ 현재 문항: **Set {selected_set} - ITEM {st.session_state.current_item}/28**")
 
-# --- 문항 불러오기 ---
+# 문항 불러오기
 def get_target_row(set_val, item_val):
     return df[(df["set"] == set_val) & (df["item"] == item_val)].iloc[0]
 
 try:
     target_row = get_target_row(selected_set, st.session_state.current_item)
     target_sentence = target_row["Target_sen"]
-
     target_words = [target_row.get(f"Target_word{i+1}") for i in range(10) if pd.notna(target_row.get(f"Target_word{i+1}"))]
     target_syllables = [target_row.get(f"Target_syl{i+1}") for i in range(20) if pd.notna(target_row.get(f"Target_syl{i+1}"))]
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
-    # --- 목표 문장 강조 박스 ---
+    # 목표 문장 박스 강조
     st.markdown(
         f"""
         <div style='
@@ -58,18 +57,27 @@ try:
             border-radius: 6px;
             font-size: 20px;
             margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         '>
-             <strong></strong> {target_sentence}
+            <strong></strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # --- 반응 입력창 ---
+    # 다음 문항 버튼 - 목표 문장 박스와 정렬 맞추기
+    col1, col2 = st.columns([8, 2])
+    with col2:
+        if st.session_state.current_item < 28:
+            if st.button("➡ 다음 문항으로 이동"):
+                st.session_state.current_item += 1
+        else:
+            st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
+
+    # 반응 입력
     response = st.text_input("📝 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
-    # --- 채점 함수 ---
+    # 점수 계산 함수들
     def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
         if matched == len(target_words) and target_words != response_words:
@@ -101,16 +109,7 @@ try:
             "Syntactic": syn_pct
         }
 
-        # ✅ 버튼 먼저 오른쪽 정렬로 표시
-        if st.session_state.current_item < 28:
-            col1, col2, col3 = st.columns([6, 1, 3])
-            with col3:
-                if st.button("➡ 다음 문항으로 이동"):
-                    st.session_state.current_item += 1
-        else:
-            st.markdown("모든 문항 입력이 완료되었습니다.")
-
-        # 📋 점수 표
+        # 점수 테이블
         st.markdown("본 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
@@ -119,7 +118,7 @@ try:
             "Syntactic": syn_pct
         }]))
 
-        # 📊 그래프 시각화
+        # 그래프
         fig, ax = plt.subplots()
         labels = ["Word", "Syllable", "Semantic", "Syntactic"]
         scores = [word_pct, syl_pct, sem_pct, syn_pct]
@@ -132,10 +131,10 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-    # 전체 평균 점수
+    # 전체 평균
     if len(st.session_state.responses) == 28:
         st.markdown("---")
-        st.markdown("📊 전체 문항 점수")
+        st.markdown("📊 전체 문항 검사 결과")
         df_avg = pd.DataFrame(st.session_state.responses).T
         avg_scores = df_avg.mean().round(2)
         st.dataframe(avg_scores.to_frame(name="Average (%)"))
@@ -150,4 +149,4 @@ try:
         st.pyplot(fig)
 
 except IndexError:
-    st.error("해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
+    st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
