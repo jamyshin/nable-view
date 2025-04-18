@@ -15,7 +15,7 @@ st.title("Top-down Sentence Repetition Task")
 st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
 st.markdown("---")
 
-# 정답 파일 로드
+# 정답 로드
 @st.cache_data
 def load_answers():
     return pd.read_excel("Answers.xlsx")
@@ -35,7 +35,7 @@ selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options
 # 현재 문항 표시
 st.markdown(f"### ✔️ 현재 문항: **Set {selected_set} - ITEM {st.session_state.current_item}/28**")
 
-# 문항 불러오기
+# 정답 불러오기
 def get_target_row(set_val, item_val):
     return df[(df["set"] == set_val) & (df["item"] == item_val)].iloc[0]
 
@@ -47,37 +47,37 @@ try:
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
-    # 목표 문장 박스 강조
+    # 목표 문장 박스 (회색 톤온톤)
     st.markdown(
         f"""
         <div style='
-            background-color: #fffbea;
+            background-color: #f5f5f5;
             padding: 12px 16px;
-            border-left: 6px solid #ffb703;
+            border-left: 6px solid #999999;
             border-radius: 6px;
             font-size: 20px;
             margin-top: 10px;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         '>
-            <strong></strong> {target_sentence}
+            <strong>목표 문장:</strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # 다음 문항 버튼 - 목표 문장 박스와 정렬 맞추기
-    col1, col2 = st.columns([8, 2])
-    with col2:
-        if st.session_state.current_item < 28:
-            if st.button("➡ 다음 문항"):
-                st.session_state.current_item += 1
-        else:
-            st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
+    # 반응 입력 라벨 (큰 폰트)
+    st.markdown(
+        """
+        <p style='font-size:20px; font-weight:bold; margin-bottom:6px;'>
+            📝 반응 문장을 입력하세요
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # 반응 입력
-    response = st.text_input("📝 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
+    response = st.text_input("", key=f"response_{st.session_state.current_item}")
 
-    # 점수 계산 함수들
+    # 점수 계산 함수
     def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
         if matched == len(target_words) and target_words != response_words:
@@ -109,8 +109,8 @@ try:
             "Syntactic": syn_pct
         }
 
-        # 점수 테이블
-        st.markdown("본 문항의 점수")
+        # 점수 표
+        st.markdown("#### 본 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
             "Syllable": syl_pct,
@@ -134,7 +134,7 @@ try:
     # 전체 평균
     if len(st.session_state.responses) == 28:
         st.markdown("---")
-        st.markdown("📊 전체 문항 검사 결과")
+        st.markdown("📊 전체 문항 평균 점수")
         df_avg = pd.DataFrame(st.session_state.responses).T
         avg_scores = df_avg.mean().round(2)
         st.dataframe(avg_scores.to_frame(name="Average (%)"))
@@ -148,5 +148,15 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
+    # 맨 하단 중앙에 다음 문항 버튼
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([3, 2, 3])
+    with col2:
+        if st.session_state.current_item < 28:
+            if st.button("➡ 다음 문항"):
+                st.session_state.current_item += 1
+        else:
+            st.markdown("모든 문항 입력이 완료되었습니다.")
+
 except IndexError:
-    st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
+    st.error("해당 세트와 문항에 대한 정답 정보가 없습니다.")
