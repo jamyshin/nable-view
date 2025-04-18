@@ -61,7 +61,7 @@ try:
             margin-top: 10px;
             margin-bottom: 10px;
         '>
-            <strong>목표 문장:</strong> {target_sentence}
+            <strong></strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
