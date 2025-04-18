@@ -12,7 +12,7 @@ st.image(logo, width=550)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
-st.markdown("© NABLe | 문장 따라말하기 스코어링 도구")
+st.markdown("© NABLe | 문장 따라말하기 과제 스코어링 도구")
 st.markdown("---")
 
 # --- 데이터 불러오기 ---
@@ -33,7 +33,7 @@ set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
 # --- 현재 문항 표시 ---
-st.markdown(f"### ✔️ 현재 문항: {selected_set} - ITEM {st.session_state.current_item}/28")
+st.markdown(f"### ✔️ 현재 문항: {selected_set} - {st.session_state.current_item}/28")
 
 # --- 정답 문항 불러오기 ---
 def get_target_row(set_val, item_val):
