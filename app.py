@@ -67,7 +67,6 @@ try:
     st.markdown(
         """
         <p style='font-size:20px; font-weight:bold; margin-bottom:0px; margin-top:0px;'>
-            📝 반응 문장을 입력하세요
         </p>
         """,
         unsafe_allow_html=True
