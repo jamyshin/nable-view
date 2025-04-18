@@ -70,22 +70,30 @@ try:
     response = st.text_input("● 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
-    def matched_word_score(target_words, response_words):
+     def matched_word_score(target_words, response_words):
+        # 정답 단어 중 맞춘 개수
         matched = sum(1 for w in target_words if w in response_words)
 
-        # 순서 오류 감점
-        if matched == len(target_words) and target_words != response_words:
-            matched -= 1
+        # 생략 감점: 정답 단어 중 빠진 단어
+        missing = [w for w in target_words if w not in response_words]
+        missing_penalty = len(missing)
 
-        # 첨가 감점 (정답에 없는 단어 포함 시 감점)
+        # 첨가 감점: 정답에 없는 단어가 응답에 포함됨
         extra = [w for w in response_words if w not in target_words]
-        if extra:
-            matched -= 1
+        extra_penalty = 1 if extra else 0  # 여러 개여도 1점만 감점
 
-        # 최소값 0 보장
-        matched = max(matched, 0)
+        # 도치 감점: 모든 단어가 맞고, 순서만 다를 때
+        order_penalty = (
+            1
+            if matched == len(target_words) and target_words != response_words
+            else 0
+        )
 
-        return round(matched / len(target_words) * 100, 2)
+        total_penalty = missing_penalty + extra_penalty + order_penalty
+        final_matched = matched - total_penalty
+        final_matched = max(final_matched, 0)
+
+        return round(final_matched / len(target_words) * 100, 2)
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
