@@ -2,68 +2,76 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# App title and NABLe copyright
+# --- 설정 ---
 st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
+
+# --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
-st.markdown("""
-**Copyright NABLe**
-""")
+st.markdown("© NABLe | 문장 따라말하기 검사 결과 확인 도구입니다.")
+st.markdown("---")
 
-# Load data
-df = pd.read_excel("Target_sentences_only.xlsx")
+# --- 데이터 불러오기 ---
+@st.cache_data
+def load_targets():
+    df = pd.read_excel("Target_sentences_only.xlsx")
+    return df
 
-# Sidebar: SET and ITEM selection
-st.sidebar.header("문항 선택")
-selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", sorted(df["SET"].unique()))
-selected_item = st.sidebar.selectbox("문항 번호를 선택하세요", list(range(1, 29)))
+df = load_targets()
 
-# Filter target sentence based on selection
-filtered = df[(df["SET"] == selected_set) & (df["Item"] == selected_item)]
-if not filtered.empty:
-    target_sentence = filtered.iloc[0]["Target_sen"]
-    st.subheader("📌 목표 문장")
-    st.write(target_sentence)
+# --- 사이드바 입력 ---
+st.sidebar.header("📂 문항 선택")
+selected_set = st.sidebar.selectbox("SET 번호", sorted(df["set"].unique()))
+filtered_df = df[df["set"] == selected_set]
 
-    # Input: user response
-    response_input = st.text_input("반응 문장을 입력하세요")
+selected_item = st.sidebar.selectbox("문항 번호", sorted(filtered_df["item"].unique()))
+target_sentence = filtered_df.loc[filtered_df["item"] == selected_item, "Target_sen"].values[0]
 
-    if response_input:
-        # Match check functions
-        def calc_matched_word(target, response):
-            target_words = target.split()
-            response_words = response.split()
-            return round(sum(w in response_words for w in target_words) / len(target_words) * 100, 2)
+# --- 본문: 반응 입력 ---
+st.subheader(f"SET {selected_set} - ITEM {selected_item}")
+st.markdown(f"**🟩 목표 문장:** {target_sentence}")
 
-        def calc_matched_syllable(target, response):
-            target_syls = list(target.replace(" ", ""))
-            response_syls = set(response.replace(" ", ""))
-            return round(sum(s in response_syls for s in target_syls) / len(target_syls) * 100, 2)
+response_input = st.text_input("📝 반응 문장 입력", placeholder="예: 마트에서 채소를 엄마가 사다")
 
-        matched_word = calc_matched_word(target_sentence, response_input)
-        matched_syllable = calc_matched_syllable(target_sentence, response_input)
-        matched_sem = filtered.iloc[0]["Matched_sem%"]
-        matched_syn = filtered.iloc[0]["Matched_syn%"]
+# --- 점수 계산 함수들 ---
+def calc_matched_word(target, response):
+    target_words = target.split()
+    response_words = response.split()
+    if not target_words:
+        return 0.0
+    match_count = sum([1 for word in target_words if word in response_words])
+    return round((match_count / len(target_words)) * 100, 2)
 
-        # Show results
-        st.subheader("채점 결과")
-        scores = {
-            "Word": matched_word,
-            "Syllable": matched_syllable,
-            "Semantic": matched_sem,
-            "Syntactic": matched_syn
-        }
+def calc_matched_syllable(target, response):
+    target_syls = list(target.replace(" ", ""))
+    response_syls = set(response.replace(" ", ""))
+    if not target_syls:
+        return 0.0
+    match_count = sum([1 for syl in target_syls if syl in response_syls])
+    return round((match_count / len(target_syls)) * 100, 2)
 
-        st.write("**점수 요약:**")
-        st.dataframe(pd.DataFrame(scores, index=["일치율 (%)"]).T)
+# 의미 일치율 및 형식 일치율은 예시용 (실제 자동 계산 아니고 임시값)
+def dummy_sem_syn():
+    return 80.0, 65.0  # 나중에 의미/형식 분석 로직 들어갈 자리
 
-        # Plot
-        fig, ax = plt.subplots()
-        ax.bar(scores.keys(), scores.values())
-        ax.set_ylim(0, 100)
-        ax.set_ylabel("일치율 (%)")
-        ax.set_title("문장 채점 시각화")
-        for i, v in enumerate(scores.values()):
-            ax.text(i, v + 2, f"{v:.1f}%", ha='center')
-        st.pyplot(fig)
-else:
-    st.warning("해당 SET과 문항 번호에 해당하는 목표 문장이 없습니다.")
+# --- 반응 입력 후 점수 계산 ---
+if response_input:
+    word_score = calc_matched_word(target_sentence, response_input)
+    syl_score = calc_matched_syllable(target_sentence, response_input)
+    sem_score, syn_score = dummy_sem_syn()
+
+    # 결과 표
+    st.markdown("### ✅ 자동 채점 결과")
+    score_data = {
+        "Score Type": ["Matched_word%", "Matched_syllable%", "Matched_sem%", "Matched_syn%"],
+        "Score": [word_score, syl_score, sem_score, syn_score]
+    }
+    score_df = pd.DataFrame(score_data)
+    st.table(score_df)
+
+    # 막대그래프
+    fig, ax = plt.subplots()
+    ax.bar(score_data["Score Type"], score_data["Score"])
+    ax.set_ylim(0, 100)
+    ax.set_ylabel("일치율 (%)")
+    ax.set_title("문장 채점 시각화")
+    st.pyplot(fig)
