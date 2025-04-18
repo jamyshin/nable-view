@@ -12,7 +12,7 @@ st.image(logo, width=300)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
-st.markdown("© NABLe | 문장 따라말하기 채점 도구입니다.")
+st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
 st.markdown("---")
 
 # --- 데이터 불러오기 ---
@@ -43,14 +43,13 @@ try:
     target_row = get_target_row(selected_set, st.session_state.current_item)
     target_sentence = target_row["Target_sen"]
     
-    # target_word1~5, syllables, sem, syn 추출
     target_words = [target_row.get(f"Target_word{i+1}") for i in range(10) if pd.notna(target_row.get(f"Target_word{i+1}"))]
     target_syllables = [target_row.get(f"Target_syl{i+1}") for i in range(20) if pd.notna(target_row.get(f"Target_syl{i+1}"))]
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
     # --- 반응 입력 ---
-    st.markdown(f"**•목표 문장:** {target_sentence}")
+    st.markdown(f"**🟩 목표 문장:** {target_sentence}")
     response = st.text_input("📝 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
@@ -86,7 +85,8 @@ try:
             "Syntactic": syn_pct
         }
 
-        st.markdown("이 문항의 점수")
+        # 점수 표 출력
+        st.markdown("본 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
             "Syllable": syl_pct,
@@ -94,7 +94,16 @@ try:
             "Syntactic": syn_pct
         }]))
 
-        # 그래프
+        # ✅ 다음 문항 버튼 - 오른쪽 정렬
+        if st.session_state.current_item < 28:
+            col1, col2, col3 = st.columns([6, 1, 3])
+            with col3:
+                if st.button("➡️ 다음 문항으로 이동"):
+                    st.session_state.current_item += 1
+        else:
+            st.markdown("모든 문항 입력이 완료되었습니다.")
+
+        # --- 그래프 시각화 ---
         fig, ax = plt.subplots()
         labels = ["Word", "Syllable", "Semantic", "Syntactic"]
         scores = [word_pct, syl_pct, sem_pct, syn_pct]
@@ -107,17 +116,10 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # 다음 문항으로 이동
-        if st.session_state.current_item < 28:
-            if st.button("➡️ 다음 문항으로 이동"):
-                st.session_state.current_item += 1
-        else:
-            st.markdown("모든 문항 입력이 완료되었습니다.")
-
-    # --- 평균 점수 계산 ---
+    # --- 평균 점수 ---
     if len(st.session_state.responses) == 28:
         st.markdown("---")
-        st.markdown("전체 문항 검사 결과")
+        st.markdown("전체 문항 평균 점수")
         df_avg = pd.DataFrame(st.session_state.responses).T
         avg_scores = df_avg.mean().round(2)
         st.dataframe(avg_scores.to_frame(name="Average (%)"))
