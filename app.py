@@ -103,7 +103,7 @@ try:
         }
 
         # --- 점수 테이블 ---
-        st.markdown("#### 본 문항의 점수")
+        st.markdown("#### ✏️ 본 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
             "Syllable": syl_pct,
