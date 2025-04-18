@@ -69,7 +69,7 @@ try:
     col1, col2 = st.columns([8, 2])
     with col2:
         if st.session_state.current_item < 28:
-            if st.button("➡ 다음 문항으로 이동"):
+            if st.button("➡ 다음 문항"):
                 st.session_state.current_item += 1
         else:
             st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
