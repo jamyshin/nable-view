@@ -1,84 +1,129 @@
 import streamlit as st
-
-# ✅ 반드시 가장 위에 있어야 함!
-st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
-
-# 이후에 나머지 import
+from PIL import Image
 import pandas as pd
 import matplotlib.pyplot as plt
-from PIL import Image
 
-# NABLe 로고 불러오기
-logo = Image.open("nable_logo.jpg")  # 파일명은 너가 올린 이름에 맞게
-st.image(logo, width=180)  # 사이즈 조정 가능
+# --- 페이지 설정 ---
+st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
+
+# --- NABLe 로고 ---
+logo = Image.open("nable_logo.jpg")  # 루트에 위치한 로고 이미지
+st.image(logo, width=300)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
-st.markdown("© NABLe | 문장 따라말하기 검사 결과 확인 도구입니다.")
+st.markdown("© NABLe | 문장 따라말하기 검사 스코어링 도구입니다.")
 st.markdown("---")
 
 # --- 데이터 불러오기 ---
 @st.cache_data
-def load_targets():
-    df = pd.read_excel("Target_sentences_only.xlsx")
-    return df
+def load_answers():
+    return pd.read_excel("Answers.xlsx")
 
-df = load_targets()
+df = load_answers()
 
-# --- 사이드바 입력 ---
-st.sidebar.header("📂 문항 선택")
-selected_set = st.sidebar.selectbox("SET 번호", sorted(df["set"].unique()))
-filtered_df = df[df["set"] == selected_set]
+# --- 세션 상태 초기화 ---
+if "current_item" not in st.session_state:
+    st.session_state.current_item = 1
+if "responses" not in st.session_state:
+    st.session_state.responses = {}
 
-selected_item = st.sidebar.selectbox("문항 번호", sorted(filtered_df["item"].unique()))
-target_sentence = filtered_df.loc[filtered_df["item"] == selected_item, "Target_sen"].values[0]
+# --- SET 선택 ---
+set_options = sorted(df["set"].dropna().unique())
+selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
-# --- 본문: 반응 입력 ---
-st.subheader(f"SET {selected_set} - ITEM {selected_item}")
-st.markdown(f"**🟩 목표 문장:** {target_sentence}")
+# --- 현재 문항 표시 ---
+st.markdown(f"### ✅ 현재 문항: SET {selected_set} - ITEM {st.session_state.current_item}/28")
 
-response_input = st.text_input("📝 반응 문장 입력", placeholder="예: 마트에서 채소를 엄마가 사다")
+# --- 정답 문항 불러오기 ---
+def get_target_row(set_val, item_val):
+    return df[(df["set"] == set_val) & (df["item"] == item_val)].iloc[0]
 
-# --- 점수 계산 함수들 ---
-def calc_matched_word(target, response):
-    target_words = target.split()
-    response_words = response.split()
-    if not target_words:
-        return 0.0
-    match_count = sum([1 for word in target_words if word in response_words])
-    return round((match_count / len(target_words)) * 100, 2)
+try:
+    target_row = get_target_row(selected_set, st.session_state.current_item)
+    target_sentence = target_row["Target_sen"]
+    target_syllables = [target_row[f"Target_syl{i+1}"] for i in range(15) if pd.notna(target_row.get(f"Target_syl{i+1}"))]
+    target_sem = [target_row[f"Target_sem{i+1}"] for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
+    target_syn = [target_row[f"Target_syn{i+1}"] for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
-def calc_matched_syllable(target, response):
-    target_syls = list(target.replace(" ", ""))
-    response_syls = set(response.replace(" ", ""))
-    if not target_syls:
-        return 0.0
-    match_count = sum([1 for syl in target_syls if syl in response_syls])
-    return round((match_count / len(target_syls)) * 100, 2)
+    # --- 반응 문장 입력 ---
+    st.markdown(f"**🟩 목표 문장:** {target_sentence}")
+    response = st.text_input("대상자의 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
-# 의미 일치율 및 형식 일치율은 예시용 (실제 자동 계산 아니고 임시값)
-def dummy_sem_syn():
-    return 80.0, 65.0  # 나중에 의미/형식 분석 로직 들어갈 자리
+    # --- 채점 함수들 ---
+    def matched_word_score(target, response):
+        t_words = target.split()
+        r_words = response.split()
+        return round(sum(1 for w in t_words if w in r_words) / len(t_words) * 100, 2)
 
-# --- 반응 입력 후 점수 계산 ---
-if response_input:
-    word_score = calc_matched_word(target_sentence, response_input)
-    syl_score = calc_matched_syllable(target_sentence, response_input)
-    sem_score, syn_score = dummy_sem_syn()
+    def matched_syllable_score(target_syls, response):
+        r_syls = set(response.replace(" ", ""))
+        return round(sum(1 for syl in target_syls if syl in r_syls) / len(target_syls) * 100, 2)
 
-    # 결과 표
-    st.markdown("### ✅ 자동 채점 결과")
-    score_data = {
-        "Score Type": ["Matched_word%", "Matched_syllable%", "Matched_sem%", "Matched_syn%"],
-        "Score": [word_score, syl_score, sem_score, syn_score]
-    }
-    score_df = pd.DataFrame(score_data)
-    st.table(score_df)
+    def matched_list_score(target_list, response):
+        return round(sum(1 for tok in target_list if str(tok) in response) / len(target_list) * 100, 2)
 
-    # 막대그래프
-    fig, ax = plt.subplots()
-    ax.bar(score_data["Score Type"], score_data["Score"])
-    ax.set_ylim(0, 100)
-    ax.set_ylabel("일치율 (%)")
-    ax.set_title("문장 채점 시각화")
-    st.pyplot(fig)
+    # --- 응답 후 채점 ---
+    if response:
+        word_pct = matched_word_score(target_sentence, response)
+        syl_pct = matched_syllable_score(target_syllables, response)
+        sem_pct = matched_list_score(target_sem, response)
+        syn_pct = matched_list_score(target_syn, response)
+
+        # 저장
+        st.session_state.responses[st.session_state.current_item] = {
+            "Word": word_pct,
+            "Syllable": syl_pct,
+            "Semantic": sem_pct,
+            "Syntactic": syn_pct
+        }
+
+        # 점수 테이블
+        st.markdown("#### 📋 이 문항의 점수")
+        st.write(pd.DataFrame([{
+            "Word": word_pct,
+            "Syllable": syl_pct,
+            "Semantic": sem_pct,
+            "Syntactic": syn_pct
+        }]))
+
+        # 막대그래프
+        fig, ax = plt.subplots()
+        labels = ["Word", "Syllable", "Semantic", "Syntactic"]
+        scores = [word_pct, syl_pct, sem_pct, syn_pct]
+        colors = ['#4E79A7', '#F28E2B', '#E15759', '#76B7B2']
+        bars = ax.bar(labels, scores, color=colors)
+        ax.set_ylim(0, 100)
+        ax.set_ylabel("Score (%)")
+        for bar in bars:
+            yval = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
+        st.pyplot(fig)
+
+        # 다음 문항으로 이동
+        if st.session_state.current_item < 28:
+            if st.button("➡️ 다음 문항으로 이동"):
+                st.session_state.current_item += 1
+        else:
+            st.markdown("모든 문항 입력이 완료되었습니다.")
+
+    # --- 전체 완료 시 평균 점수 ---
+    if len(st.session_state.responses) == 28:
+        st.markdown("---")
+        st.markdown("전체 문항 평균 점수 결과)")
+        df_avg = pd.DataFrame(st.session_state.responses).T
+        avg_scores = df_avg.mean().round(2)
+
+        st.dataframe(avg_scores.to_frame(name="Average (%)"))
+
+        fig, ax = plt.subplots()
+        bars = ax.bar(avg_scores.index, avg_scores.values, color=colors)
+        ax.set_ylim(0, 100)
+        ax.set_ylabel("Score (%)")
+        for bar in bars:
+            yval = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
+        st.pyplot(fig)
+
+except IndexError:
+    st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
