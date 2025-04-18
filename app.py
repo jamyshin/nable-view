@@ -42,14 +42,13 @@ def get_target_row(set_val, item_val):
 try:
     target_row = get_target_row(selected_set, st.session_state.current_item)
     target_sentence = target_row["Target_sen"]
-    
-    # target_word1~5, syllables, sem, syn 추출
+
     target_words = [target_row.get(f"Target_word{i+1}") for i in range(10) if pd.notna(target_row.get(f"Target_word{i+1}"))]
     target_syllables = [target_row.get(f"Target_syl{i+1}") for i in range(20) if pd.notna(target_row.get(f"Target_syl{i+1}"))]
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
-    # --- 목표 문장 (회색 톤온톤 박스) ---
+    # --- 목표 문장 박스 (회색 톤온톤) ---
     st.markdown(
         f"""
         <div style='
@@ -125,10 +124,11 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # --- 다음 문항으로 이동 ---
+        # --- 다음 문항으로 이동 (즉시 반영) ---
         if st.session_state.current_item < 28:
-            if st.button("➡️ 다음 문항으로 이동"):
+            if st.button("다음 문항"):
                 st.session_state.current_item += 1
+                st.experimental_rerun()
         else:
             st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
 
