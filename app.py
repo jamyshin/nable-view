@@ -67,8 +67,18 @@ try:
     )
 
     # --- 반응 입력 ---
-    response = st.text_input("● 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
+    # 큰 폰트로 반응 문장 입력 안내
+    st.markdown(
+        """
+        <div style='font-size: 20px; margin-bottom: -10px;'>
+            ● 반응 문장을 입력하세요
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    response = st.text_input("", key=f"response_{st.session_state.current_item}")
 
+    
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
         matched = sum(1 for w in target_words if w in response_words)
