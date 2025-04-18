@@ -49,24 +49,25 @@ try:
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
+    # --- 목표 문장 (회색 톤온톤 박스) ---
+    st.markdown(
+        f"""
+        <div style='
+            background-color: #f5f5f5;
+            padding: 12px 16px;
+            border-left: 6px solid #999999;
+            border-radius: 6px;
+            font-size: 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        '>
+            <strong>목표 문장:</strong> {target_sentence}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     # --- 반응 입력 ---
-    # 목표 문장 박스 (회색 톤온톤)
-st.markdown(
-    f"""
-    <div style='
-        background-color: #f5f5f5;
-        padding: 12px 16px;
-        border-left: 6px solid #999999;
-        border-radius: 6px;
-        font-size: 20px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-    '>
-        <strong>목표 문장:</strong> {target_sentence}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
     response = st.text_input("📝 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
@@ -102,6 +103,7 @@ st.markdown(
             "Syntactic": syn_pct
         }
 
+        # --- 점수 테이블 ---
         st.markdown("#### 📋 이 문항의 점수")
         st.write(pd.DataFrame([{
             "Word": word_pct,
@@ -110,7 +112,7 @@ st.markdown(
             "Syntactic": syn_pct
         }]))
 
-        # 그래프
+        # --- 그래프 ---
         fig, ax = plt.subplots()
         labels = ["Word", "Syllable", "Semantic", "Syntactic"]
         scores = [word_pct, syl_pct, sem_pct, syn_pct]
@@ -123,7 +125,7 @@ st.markdown(
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # 다음 문항으로 이동
+        # --- 다음 문항으로 이동 ---
         if st.session_state.current_item < 28:
             if st.button("➡️ 다음 문항으로 이동"):
                 st.session_state.current_item += 1
