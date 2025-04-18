@@ -12,7 +12,7 @@ st.image(logo, width=300)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
-st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
+st.markdown("© NABLe | 문장 따라말하기 스코어링 도구")
 st.markdown("---")
 
 # --- 데이터 불러오기 ---
@@ -33,7 +33,7 @@ set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
 # --- 현재 문항 표시 ---
-st.markdown(f"### ✅ 현재 문항: {selected_set} - ITEM {st.session_state.current_item}/28")
+st.markdown(f"### ✔️ 현재 문항: {selected_set} - ITEM {st.session_state.current_item}/28")
 
 # --- 정답 문항 불러오기 ---
 def get_target_row(set_val, item_val):
@@ -50,7 +50,23 @@ try:
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
     # --- 반응 입력 ---
-    st.markdown(f"**🟩 목표 문장:** {target_sentence}")
+    # 목표 문장 박스 (회색 톤온톤)
+st.markdown(
+    f"""
+    <div style='
+        background-color: #f5f5f5;
+        padding: 12px 16px;
+        border-left: 6px solid #999999;
+        border-radius: 6px;
+        font-size: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    '>
+        <strong>목표 문장:</strong> {target_sentence}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     response = st.text_input("📝 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
     # --- 채점 함수 ---
