@@ -15,6 +15,7 @@ st.title("Top-down Sentence Repetition Task")
 st.markdown("© NABLe | 문장 따라말하기 스코어링 도구입니다.")
 st.markdown("---")
 
+# 정답 로드
 @st.cache_data
 def load_answers():
     return pd.read_excel("Answers.xlsx")
@@ -33,7 +34,7 @@ selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options
 # 현재 문항
 st.markdown(f"### ✔️ 현재 문항: **Set {selected_set} - ITEM {st.session_state.current_item}/28**")
 
-# 정답 불러오기
+# 문항 불러오기
 def get_target_row(set_val, item_val):
     return df[(df["set"] == set_val) & (df["item"] == item_val)].iloc[0]
 
@@ -57,17 +58,18 @@ try:
             margin-top: 10px;
             margin-bottom: 10px;
         '>
-            <strong></strong> {target_sentence}
+            <strong>목표 문장:</strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # 반응 입력 라벨 (20px) + 입력창 밀착
+    # 반응 입력 라벨 (붙어 있게 margin 제거)
     st.markdown(
         """
-        <p style='font-size:20px; font-weight:bold; margin-bottom:0px; margin-top:0px;'>
-        </p>
+        <div style='margin-bottom:-10px'>
+            <p style='font-size:20px; font-weight:bold;'>📝 반응 문장을 입력하세요</p>
+        </div>
         """,
         unsafe_allow_html=True
     )
@@ -126,7 +128,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-    # 평균 점수
+    # 전체 평균
     if len(st.session_state.responses) == 28:
         st.markdown("---")
         st.markdown("📊 전체 문항 평균 점수")
@@ -151,7 +153,7 @@ try:
             if st.button("➡ 다음 문항"):
                 st.session_state.current_item += 1
         else:
-            st.markdown("모든 문항 입력이 완료되었습니다.")
+            st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
 
 except IndexError:
-    st.error("해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
+    st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
