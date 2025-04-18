@@ -124,18 +124,18 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # --- 다음 문항으로 이동 (즉시 반영) ---
+        # --- 다음 문항으로 이동 (st.rerun 사용) ---
         if st.session_state.current_item < 28:
-            if st.button("다음 문항"):
+            if st.button("➡️ 다음 문항으로 이동"):
                 st.session_state.current_item += 1
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
 
     # --- 평균 점수 계산 ---
     if len(st.session_state.responses) == 28:
         st.markdown("---")
-        st.markdown("### 📊 28개 문항 평균 점수 (Average across all items)")
+        st.markdown("### 📊 전체 검사 결과 (Average across all items)")
         df_avg = pd.DataFrame(st.session_state.responses).T
         avg_scores = df_avg.mean().round(2)
         st.dataframe(avg_scores.to_frame(name="Average (%)"))
