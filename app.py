@@ -28,7 +28,7 @@ if "current_item" not in st.session_state:
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 
-# --- SET 선택 (숫자 순으로 정렬) ---
+# --- SET 선택 (숫자 순 정렬) ---
 set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split()[-1]))
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
@@ -81,18 +81,15 @@ try:
         extra = [w for w in response_words if w not in target_words]
         extra_penalty = 1 if extra else 0
 
-        # 도치 감점 (모두 맞고 순서만 다를 때)
-        order_penalty = (
-            1
-            if matched == len(target_words) and target_words != response_words
-            else 0
-        )
+        # 도치 감점
+        order_penalty = 1 if matched == len(target_words) and target_words != response_words else 0
 
+        # 오류 수 기반 계산
         total_penalty = missing_penalty + extra_penalty + order_penalty
-        final_matched = matched - total_penalty
-        final_matched = max(final_matched, 0)
+        score = (len(target_words) - total_penalty) / len(target_words)
+        score = max(score, 0)
 
-        return round(final_matched / len(target_words) * 100, 2)
+        return round(score * 100, 2)
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
