@@ -168,17 +168,8 @@ st.markdown(
     """
     <div style='font-size: 14px; color: gray; text-align: center;'>
         © 2025 NABLe. All rights reserved. <br>
-        본 검사도구는 NABLe 연구팀에 의해 개발되었으며, 무단 복제 및 사용을 금합니다. <br>
+        본 검사는 NABLe 연구팀에 의해 개발되었으며, 무단 복제 및 사용을 금합니다. <br>
         <i>Top-down Sentence Repetition Task™</i> is the intellectual property of NABLe. Unauthorized commercial use or redistribution is prohibited.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-    <div style='font-size:15px; color: #888888;'>
-        ※ 본 도구는 테스트 중인 <b>베타 버전</b>입니다. 
     </div>
     """,
     unsafe_allow_html=True
