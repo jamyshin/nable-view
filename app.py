@@ -2,8 +2,6 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 import matplotlib.pyplot as plt
-import tempfile
-import whisper
 
 # --- 페이지 설정 ---
 st.set_page_config(page_title="Top-down Sentence Repetition Task", layout="centered")
@@ -24,39 +22,33 @@ def load_answers():
 
 df = load_answers()
 
-# --- Whisper 모델 로딩 ---
-@st.cache_resource
-def load_model():
-    return whisper.load_model("base")
-
-model = load_model()
-
 # --- 세션 상태 초기화 ---
 if "current_item" not in st.session_state:
     st.session_state.current_item = 1
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 
-# --- SET 선택 ---
+# --- SET 선택 (숫자 순 정렬) ---
 set_options = sorted(df["set"].dropna().unique(), key=lambda x: int(str(x).split()[-1]))
 selected_set = st.sidebar.selectbox("SET 번호를 선택하세요", set_options)
 
 # --- 현재 문항 표시 ---
 st.markdown(f"### ✔️ 현재 문항: {selected_set} - {st.session_state.current_item}/28")
 
-# --- 정답 불러오기 ---
+# --- 정답 문항 불러오기 ---
 def get_target_row(set_val, item_val):
     return df[(df["set"] == set_val) & (df["item"] == item_val)].iloc[0]
 
 try:
     target_row = get_target_row(selected_set, st.session_state.current_item)
     target_sentence = target_row["Target_sen"]
+
     target_words = [target_row.get(f"Target_word{i+1}") for i in range(10) if pd.notna(target_row.get(f"Target_word{i+1}"))]
     target_syllables = [target_row.get(f"Target_syl{i+1}") for i in range(20) if pd.notna(target_row.get(f"Target_syl{i+1}"))]
     target_sem = [target_row.get(f"Target_sem{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_sem{i+1}"))]
     target_syn = [target_row.get(f"Target_syn{i+1}") for i in range(5) if pd.notna(target_row.get(f"Target_syn{i+1}"))]
 
-    # --- 목표 문장 표시 ---
+    # --- 목표 문장 박스 (회색 톤온톤) ---
     st.markdown(
         f"""
         <div style='
@@ -68,48 +60,38 @@ try:
             margin-top: 10px;
             margin-bottom: 10px;
         '>
-            {target_sentence}
+            <strong></strong> {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # --- 입력 옵션: 음성 or 수동 ---
-    st.markdown("🎙️ 음성 파일을 업로드하거나 ✍️ 직접 입력할 수 있어요")
-    audio_file = st.file_uploader("📤 음성 파일 업로드 (wav, mp3, m4a)", type=["wav", "mp3", "m4a"])
-    manual_input = st.text_input("✏️ 반응 문장을 직접 입력", key=f"response_{st.session_state.current_item}")
+    # --- 반응 입력 ---
+    response = st.text_input("● 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
 
-    response = ""
-
-    if audio_file is not None:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(audio_file.read())
-            tmp_path = tmp.name
-
-        with st.spinner("🎧 음성 인식 중입니다..."):
-            result = model.transcribe(tmp_path, language='ko')
-            response = result["text"].strip()
-            st.success("📝 인식된 문장:")
-            st.markdown(f"**{response}**")
-    elif manual_input.strip():
-        response = manual_input.strip()
-
+    
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
         matched_words = []
         used = set()
+
         for rw in response_words:
             if rw in target_words and rw not in used:
                 matched_words.append(rw)
                 used.add(rw)
+
         matched_count = len(matched_words)
+
+    # 도치 감점: 정답 단어가 2개 이상 맞았고, 순서가 target과 다를 경우 -1
         reorder_penalty = 0
         if matched_count >= 2:
             target_subseq = [w for w in target_words if w in matched_words]
             if matched_words != target_subseq:
                 reorder_penalty = 1
+
         score = max((matched_count - reorder_penalty) / len(target_words), 0)
         return round(score * 100, 2)
+
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
@@ -124,6 +106,7 @@ try:
     # --- 점수 계산 ---
     if response:
         response_words = response.split()
+
         word_pct = matched_word_score(target_words, response_words)
         syl_pct = matched_syllable_score(target_syllables, response)
         sem_pct = matched_list_score(target_sem, response)
@@ -158,7 +141,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, yval + 1, f"{yval:.1f}%", ha='center')
         st.pyplot(fig)
 
-        # 다음 문항 버튼
+        # --- 다음 문항으로 이동 ---
         if st.session_state.current_item < 28:
             if st.button("➡️ 다음 문항으로 이동"):
                 st.session_state.current_item += 1
@@ -166,7 +149,7 @@ try:
         else:
             st.markdown("✅ 모든 문항 입력이 완료되었습니다.")
 
-    # --- 전체 평균 계산 ---
+    # --- 평균 점수 계산 ---
     if len(st.session_state.responses) == 28:
         st.markdown("---")
         st.markdown("### 📊 전체 검사 결과 (Average across all items)")
@@ -186,7 +169,7 @@ try:
 except IndexError:
     st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
 
-# --- 저작권 안내 ---
+# --- 저작권 안내 문구 (화면 하단 고정 스타일) ---
 st.markdown("---")
 st.markdown(
     """
