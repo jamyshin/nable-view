@@ -60,38 +60,60 @@ try:
             margin-top: 10px;
             margin-bottom: 10px;
         '>
-            <strong></strong> {target_sentence}
+            {target_sentence}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # --- 반응 입력 ---
-    response = st.text_input("● 반응 문장을 입력하세요", key=f"response_{st.session_state.current_item}")
+    # --- 음성 인식 JS UI ---
+    st.markdown("""
+    <script>
+    function startRecognition() {
+        var recognition = new webkitSpeechRecognition();
+        recognition.lang = "ko-KR";
+        recognition.onresult = function(event) {
+            var result = event.results[0][0].transcript;
+            document.getElementById("speech-result").value = result;
+            document.getElementById("speech-result").dispatchEvent(new Event("input"));
+        };
+        recognition.start();
+    }
+    </script>
 
-    
+    <input type="text" id="speech-result" placeholder="🎙 말한 문장이 여기에 표시됩니다" 
+    style="width:100%; font-size:18px; padding:10px; margin-top:8px;"/>
+    <button onclick="startRecognition()" 
+    style="font-size:16px; padding:8px 16px; margin-top:10px; margin-bottom:20px;">🎤 음성 입력 시작</button>
+    """, unsafe_allow_html=True)
+
+    # --- 음성 + 수동 입력 통합 ---
+    recognized_text = st.text_input("🧠 음성 인식 결과", key="speech-result")
+    manual_input = st.text_input("✏️ 직접 입력 (선택 사항)", key=f"response_{st.session_state.current_item}")
+    response = recognized_text.strip() if recognized_text.strip() else manual_input.strip()
+
+    # --- 시각적 안내 ---
+    if recognized_text.strip():
+        st.success("🎧 음성 입력으로 문장이 자동 인식되었습니다.")
+    elif manual_input.strip():
+        st.info("⌨️ 수동으로 입력한 문장이 사용됩니다.")
+
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
         matched_words = []
         used = set()
-
         for rw in response_words:
             if rw in target_words and rw not in used:
                 matched_words.append(rw)
                 used.add(rw)
-
         matched_count = len(matched_words)
-
-    # 도치 감점: 정답 단어가 2개 이상 맞았고, 순서가 target과 다를 경우 -1
         reorder_penalty = 0
         if matched_count >= 2:
             target_subseq = [w for w in target_words if w in matched_words]
             if matched_words != target_subseq:
                 reorder_penalty = 1
-
         score = max((matched_count - reorder_penalty) / len(target_words), 0)
         return round(score * 100, 2)
-
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
@@ -106,7 +128,6 @@ try:
     # --- 점수 계산 ---
     if response:
         response_words = response.split()
-
         word_pct = matched_word_score(target_words, response_words)
         syl_pct = matched_syllable_score(target_syllables, response)
         sem_pct = matched_list_score(target_sem, response)
@@ -128,7 +149,7 @@ try:
             "Syntactic": syn_pct
         }]))
 
-        # --- 그래프 ---
+        # --- 그래프 시각화 ---
         fig, ax = plt.subplots()
         labels = ["Word", "Syllable", "Semantic", "Syntactic"]
         scores = [word_pct, syl_pct, sem_pct, syn_pct]
@@ -169,7 +190,7 @@ try:
 except IndexError:
     st.error("❌ 해당 SET과 ITEM에 대한 정답 정보가 없습니다.")
 
-# --- 저작권 안내 문구 (화면 하단 고정 스타일) ---
+# --- 저작권 안내 문구 ---
 st.markdown("---")
 st.markdown(
     """
