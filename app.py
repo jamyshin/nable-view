@@ -174,3 +174,12 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+st.markdown(
+    """
+    <div style='font-size:15px; color: #888888;'>
+        ※ 본 도구는 테스트 중인 <b>베타 버전</b>입니다. 
+    </div>
+    """,
+    unsafe_allow_html=True
+)
