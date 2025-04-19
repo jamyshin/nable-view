@@ -12,6 +12,7 @@ st.image(logo, width=500)
 
 # --- 제목 & 설명 ---
 st.title("Top-down Sentence Repetition Task")
+st.markdown("© NABLe | 문장 따라말하기 과제 스코어링 테스트")
 st.markdown("---")
 
 # --- 데이터 불러오기 ---
