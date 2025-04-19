@@ -72,20 +72,26 @@ try:
     
     # --- 채점 함수 ---
     def matched_word_score(target_words, response_words):
-        matched = sum(1 for w in target_words if w in response_words)
-        missing = [w for w in target_words if w not in response_words]
-        missing_penalty = len(missing)
+        matched_words = []
+        used = set()
 
-        extra = [w for w in response_words if w not in target_words]
-        extra_penalty = 1 if extra else 0
+        for rw in response_words:
+            if rw in target_words and rw not in used:
+                matched_words.append(rw)
+                used.add(rw)
 
-        # 도치 감점 (정답 단어들끼리의 순서 비교)
-        filtered_response = [w for w in response_words if w in target_words]
-        order_penalty = 1 if filtered_response != [w for w in target_words if w in filtered_response] else 0
+        matched_count = len(matched_words)
 
-        total_penalty = missing_penalty + extra_penalty + order_penalty
-        score = (len(target_words) - total_penalty) / len(target_words)
-        return round(max(score, 0) * 100, 2)
+    # 도치 감점: 정답 단어가 2개 이상 맞았고, 순서가 target과 다를 경우 -1
+        reorder_penalty = 0
+        if matched_count >= 2:
+            target_subseq = [w for w in target_words if w in matched_words]
+            if matched_words != target_subseq:
+                reorder_penalty = 1
+
+        score = max((matched_count - reorder_penalty) / len(target_words), 0)
+        return round(score * 100, 2)
+
 
     def matched_syllable_score(target_syllables, response_sentence):
         response_syllables = list(response_sentence.replace(" ", ""))
